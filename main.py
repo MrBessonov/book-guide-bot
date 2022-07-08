@@ -11,6 +11,8 @@ b_token = os.getenv('BOT_TOKEN')
 b_url = os.getenv('BOT_URL')
 bot = telebot.TeleBot(token=b_token)
 
+server = Flask(__name__)
+
 msg = Template("Рекомендую {{p['title']}}. Автор {{p['author']}}.\nСредняя оценка на fantlab.ru: {{p['mark']}}.\nАннотация: {{p['annotation']}}")
 
 
@@ -349,23 +351,20 @@ def book_rec(message):
         bot_mess_book(message)
 
 
-if "HEROKU" in list(os.environ.keys()):
-    logger = telebot.logger
-    telebot.logger.setLevel(logging.INFO)
+@server.route('/' + b_token, methods=['POST'])
+def getMessage():
+    json_string = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return "!", 200
 
-    server = Flask(__name__)
-    @server.route("/bot", methods=['POST'])
-    def getMessage():
-        bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
-        return "!", 200
-    @server.route("/")
-    def webhook():
-        bot.remove_webhook()
-        bot.set_webhook(url=b_url)
-        return "?", 200
-    server.run(host="0.0.0.0", port=os.environ.get('PORT', 5000))
-else:
-    # если переменной окружения HEROKU нет, значит это запуск с машины разработчика.
-    # Удаляем вебхук на всякий случай, и запускаем с обычным поллингом.
+
+@server.route("/")
+def webhook():
     bot.remove_webhook()
-    bot.polling(none_stop=True)
+    bot.set_webhook(url=b_url + b_token)
+    return "!", 200
+
+
+if __name__ == "__main__":
+    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))

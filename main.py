@@ -8,6 +8,7 @@ from flask import Flask, request
 from jinja2 import Template
 
 b_token = os.getenv('BOT_TOKEN')
+b_url = os.getenv('BOT_URL')
 bot = telebot.TeleBot(token=b_token)
 
 msg = Template("Рекомендую {{p['title']}}. Автор {{p['author']}}.\nСредняя оценка на fantlab.ru: {{p['mark']}}.\nАннотация: {{p['annotation']}}")
@@ -360,9 +361,9 @@ if "HEROKU" in list(os.environ.keys()):
     @server.route("/")
     def webhook():
         bot.remove_webhook()
-        bot.set_webhook(url="https://dashboard.heroku.com/apps/book-guide-bot")
+        bot.set_webhook(url=b_url)
         return "?", 200
-    server.run(host="0.0.0.0", port=os.environ.get('PORT', 80))
+    server.run(host="0.0.0.0", port=os.environ.get('PORT', 5000))
 else:
     # если переменной окружения HEROKU нет, значит это запуск с машины разработчика.
     # Удаляем вебхук на всякий случай, и запускаем с обычным поллингом.
